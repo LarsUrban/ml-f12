@@ -55,3 +55,29 @@ F12_TERM_COLUMNS = [
 
 # Target. Full MP2-F12 correction without CABS singles.
 TARGET_COLUMN = "e_f12"
+
+FEATURE_GROUPS: dict[str, list[str]] = {
+    "mp2": MP2_COLUMNS,
+    "f12": F12_TERM_COLUMNS,
+}
+
+
+def feature_columns(
+    df: pd.DataFrame, groups: tuple[str, ...] = ("mp2", "f12", "ao")
+) -> list[str]:
+    """Return the feature column names for the selected groups, in fixed order."""
+    columns: list[str] = []
+    for group in groups:
+        if group == "ao":
+            names = [str(c) for c in df.columns]
+            columns += sorted(n for n in names if n.startswith("ao_"))
+        else:
+            columns += FEATURE_GROUPS[group]
+    return columns
+
+
+def split_xy(df: pd.DataFrame, columns: list[str]) -> tuple[np.ndarray, np.ndarray]:
+    """Return the feature matrix X and the target vector y."""
+    X = df[columns].to_numpy(dtype=float)
+    y = df[TARGET_COLUMN].to_numpy(dtype=float)
+    return X, y
