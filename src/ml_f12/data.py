@@ -15,6 +15,8 @@ All energies are in Hartree, given as signed contributions to the energy.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 import numpy as np
 import pandas as pd
 
@@ -22,6 +24,8 @@ import pandas as pd
 META_COLUMNS = [
     "molecule",
     "basis",
+    "aux_basis",
+    "cabs_basis",
     "n_atoms",
     "n_electrons",
     "e_hf",  # total HF energy, for bookkeeping only
@@ -36,8 +40,7 @@ MP2_COLUMNS = [
 
 # Cheap F12 terms, all below O(M^4)
 F12_TERM_COLUMNS = [
-    "e_cabs_direct",  # CABS singles
-    "e_cabs_exchange",
+    "e_cabs_singles",  # CABS singles correction
     "e_v_fg_direct",  # Eq. 3.169, direct
     "e_v_fg_exchange",  # Eq. 3.169, exchange
     "e_v_fg3e_exchange",  # Eq. 3.172
@@ -81,3 +84,12 @@ def split_xy(df: pd.DataFrame, columns: list[str]) -> tuple[np.ndarray, np.ndarr
     X = df[columns].to_numpy(dtype=float)
     y = df[TARGET_COLUMN].to_numpy(dtype=float)
     return X, y
+
+
+def load_fermions_dir(directory: str | Path) -> pd.DataFrame:
+    """Read all FermiONs++ JSON files in a directory into one table."""
+    rows = []
+    for path in sorted(Path(directory).glob("*.json")):
+        with open(path) as fh:
+            rows.append(json.load(fh))
+    return pd.DataFrame(rows)
